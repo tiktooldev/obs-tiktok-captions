@@ -35,9 +35,8 @@ void TrialTracker::refresh() {
                 if (!ok) return;
                 // /captions/trial/check returns jwt/apiKey only after the
                 // user signs in on the web. When it lands, save it AND
-                // persist to disk immediately - the next read of the same
-                // cache key returns null (single-read), so a missed
-                // persist means the streamer has to sign in again.
+                // persist to disk immediately - the handoff is returned
+                // only once, so a missed persist means the streamer has to sign in again.
                 if (body.contains("jwt")) {
                     const QString jwt = body.value("jwt").toString();
                     if (jwt.isEmpty()) { applyServerPayload(body); return; }
@@ -62,7 +61,7 @@ void TrialTracker::refresh() {
     api_->resolveCredits([this](bool ok, const QJsonObject &body, int code) {
         if (!ok) {
             // 401 from /captions/credits is most often a transient apiKey
-            // sync hiccup (key just rotated, account service replication lag), NOT
+            // sync hiccup (key just rotated), NOT
             // a dead JWT. Earlier builds nuked the JWT on every 401 which
             // caused the dock to flap between "Free trial - 60 min left" and
             // "Sign in to start" once every 3 seconds. Keep the cached state

@@ -280,8 +280,7 @@ QString Settings::fingerprint() const {
     }
     std::lock_guard<std::mutex> g(m_);
     if (fp.isEmpty()) {
-        // Hardware probe failed - fall back to the install UUID so the server
-        // still has something stable to dedup on.
+        // Hardware probe failed - fall back to the install UUID.
         cachedFingerprint_ = deviceId_;
     } else {
         cachedFingerprint_ = QString::fromLatin1(fp);

@@ -945,8 +945,8 @@ void TikToolCaptionsDock::onMasterToggle() {
         auto lc = Settings::instance().language();
         auto sc = Settings::instance().session();
         const QString mode = (lc.translateTo != "off") ? "translate" : sc.mode;
-        // We pass the apiKey here, not the JWT. captions.ts authenticates the
-        // WS via x-api-key / apiKey= query param and meters billing per-key.
+        // We pass the apiKey here, not the JWT. The captions WS authenticates
+        // via the apiKey= query param.
         ws_->connectWith(Settings::instance().apiKey(),
                          Settings::instance().deviceId(),
                          Settings::instance().tiktokUsername(),
@@ -959,11 +959,8 @@ void TikToolCaptionsDock::onMasterToggle() {
 }
 
 void TikToolCaptionsDock::onInstallOverlay() {
-    // Drop the mint-endpoint round-trip. /captions/overlay/mint was never
-    // implemented on the server so this call was 404-ing silently and the
-    // install never ran. We pass the streamer's JWT directly - the overlay
-    // worker already accepts jwtKey on the URL and the wizard takes the
-    // same path with no problem.
+    // Pass the streamer's JWT directly; the overlay accepts jwtKey on the
+    // URL, same as the wizard path.
     if (Settings::instance().jwt().isEmpty()) {
         statusPill_->setText("Sign in first - cannot install overlay");
         onLoginClicked();

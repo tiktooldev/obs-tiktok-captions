@@ -52,9 +52,6 @@ void ApiClient::postJson(const QString &p, const QJsonObject &b, JsonCb c, bool 
 void ApiClient::getJson(const QString &p, JsonCb c, bool a) { send("GET", p, {}, c, a); }
 
 void ApiClient::checkTrial(const QString &deviceId, JsonCb cb) {
-    // Server uses fingerprint_ to dedup duplicate accounts spawned on the
-    // same machine across IP rotations. Real Cloudflare-side IP is read off
-    // CF-Connecting-IP server-side; we do not send IP ourselves.
     QString q = "/captions/trial/check?deviceId=" + deviceId;
     if (!fingerprint_.isEmpty()) q += "&fp=" + fingerprint_;
     getJson(q, cb, /*authed=*/false);

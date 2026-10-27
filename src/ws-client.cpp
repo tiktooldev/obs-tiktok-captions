@@ -75,23 +75,19 @@ void WsClient::connectWith(const QString &apiKey, const QString &deviceId,
     // loop while ignoring the plugin's mic frames.
     QUrl url(QString::fromLatin1(TIKTOOL_WS_BASE) + "/captions/plugin");
     QUrlQuery q;
-    // captions.ts auth accepts both `apiKey=` query param and `jwtKey=`. We
-    // send whichever the plugin actually has. On a local-machine OBS plugin
-    // there is no shared-browser log surface to leak the key, so url-param
-    // auth is fine here.
+    // The captions WS accepts both `apiKey=` and `jwtKey=`. We send
+    // whichever the plugin actually has.
     if (!apiKey.isEmpty())         q.addQueryItem("apiKey", apiKey);
     if (!deviceId.isEmpty())       q.addQueryItem("deviceId", deviceId);
-    // uniqueId is the streamer's TikTok handle. The captions hub keys on it
-    // so multiple subscribers (dock + overlay) share one STT session per
-    // (uniqueId, language, translate). Without it, captions.ts rejects the
-    // connection ("Missing uniqueId parameter").
+    // uniqueId is the streamer's TikTok handle and is required by the
+    // captions WS ("Missing uniqueId parameter").
     const QString id = uniqueId.isEmpty()
         ? QStringLiteral("obs-plugin-") + deviceId
         : uniqueId;
     if (!id.isEmpty())             q.addQueryItem("uniqueId", id);
     if (!sourceLanguage.isEmpty()) q.addQueryItem("language", sourceLanguage);
     if (!translateTo.isEmpty())    q.addQueryItem("translate", translateTo);
-    q.addQueryItem("mode", "client"); // tell captions.ts we send PCM ourselves
+    q.addQueryItem("mode", "client"); // we send PCM ourselves
     q.addQueryItem("source", "obs-plugin");
     q.addQueryItem("version", TIKTOK_CAPTIONS_VERSION_STR);
     url.setQuery(q);
@@ -334,7 +330,7 @@ void WsClient::onTextPayload(const QByteArray &payload) {
     } else if (type == "error") {
         emit errorOccurred(obj.value("message").toString("server error"));
     } else if (type == "status") {
-        // captions.ts emits 'connecting' / 'waiting' / 'live' / 'transcribing'.
+        // The server emits 'connecting' / 'waiting' / 'live' / 'transcribing'.
         // 'waiting' fires when the streamer is not currently live - the WS
         // stays open polling and resumes once they go live. Without surfacing
         // this, the dock pill stays on "Connecting..." indefinitely and the

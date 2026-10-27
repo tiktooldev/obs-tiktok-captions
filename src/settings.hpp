@@ -47,18 +47,13 @@ public:
 
     void load();
     void save();
-    // Wipes everything except the persisted device id (we keep that so the
-    // anti-abuse fingerprint mapping survives a manual reset; otherwise a
-    // streamer could spam Reset to dodge duplicate-account detection).
+    // Wipes everything except the persisted device id.
     void resetAll();
 
     // Authentication / identity
     QString deviceId() const;        // stable per-install UUID, persisted
-    // Hardware fingerprint = SHA-256(machineGuid + computerName + volumeSerial).
-    // Stable across plugin reinstalls / OBS reinstalls / device-id resets.
-    // Used by the trial-check anti-abuse layer to catch the same machine
-    // signing up under a different account. Falls back to deviceId on
-    // platforms where the hardware probe fails. Cached after first call.
+    // Stable per-machine identifier sent with the trial check. Falls back to
+    // deviceId when unavailable. Cached after first call.
     QString fingerprint() const;
     QString jwt() const;             // captions JWT once user logs in
     void    setJwt(const QString &);
