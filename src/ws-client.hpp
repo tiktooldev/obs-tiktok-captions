@@ -8,7 +8,7 @@
 #include <QSslSocket>
 #include <deque>
 
-namespace tiktool {
+namespace tiktok {
 
 // Hand-rolled RFC 6455 WebSocket client over QSslSocket. Avoids Qt6WebSockets
 // because installed OBS Studio binaries do not ship that module and shipping
@@ -43,6 +43,7 @@ signals:
     void minutesUpdate(int minutesLeft);
     void errorOccurred(const QString &reason);
     void serverHello(const QJsonObject &hello);
+    void serverStatus(const QString &status);
 
 private slots:
     void onConnected();
@@ -96,4 +97,4 @@ private:
     std::deque<QByteArray> bufferedFrames_;
 };
 
-} // namespace tiktool
+} // namespace tiktok

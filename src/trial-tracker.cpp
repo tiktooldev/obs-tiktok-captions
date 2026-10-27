@@ -3,7 +3,7 @@
 
 #include <QJsonObject>
 
-namespace tiktool {
+namespace tiktok {
 
 TrialTracker::TrialTracker(ApiClient *api, QObject *parent)
     : QObject(parent), api_(api), poll_(new QTimer(this)) {
@@ -154,4 +154,4 @@ void TrialTracker::applyServerPayload(const QJsonObject &b) {
     emit changed();
 }
 
-} // namespace tiktool
+} // namespace tiktok
