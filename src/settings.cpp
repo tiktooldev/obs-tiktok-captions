@@ -3,18 +3,12 @@
 #include <obs-module.h>
 #include <util/platform.h>
 
-#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStandardPaths>
-#include <QSysInfo>
 #include <QUuid>
-
-#if defined(_WIN32)
-#  include <windows.h>
-#endif
 
 namespace tiktok {
 
@@ -41,17 +35,22 @@ QString Settings::configFilePath() const {
 }
 
 void Settings::load() {
-    std::lock_guard<std::mutex> g(m_);
-    QFile f(configFilePath());
-    if (!f.open(QIODevice::ReadOnly)) {
-        if (deviceId_.isEmpty())
+    bool generated = false;
+    {
+        std::lock_guard<std::mutex> g(m_);
+        QFile f(configFilePath());
+        if (f.open(QIODevice::ReadOnly)) {
+            auto doc = QJsonDocument::fromJson(f.readAll());
+            if (doc.isObject()) fromJson(doc.object());
+        }
+        if (deviceId_.isEmpty()) {
             deviceId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        return;
+            generated = true;
+        }
     }
-    auto doc = QJsonDocument::fromJson(f.readAll());
-    if (doc.isObject()) fromJson(doc.object());
-    if (deviceId_.isEmpty())
-        deviceId_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    // Persist a freshly generated id right away so a crash before the
+    // first regular save does not hand out a new id on the next launch.
+    if (generated) save();
 }
 
 void Settings::resetAll() {
@@ -76,10 +75,8 @@ void Settings::resetAll() {
         wizardDone_  = false;
         streamingPersisted_ = false;
         uiScale_ = 1.0;
-        cachedFingerprint_.clear();
     }
     save();
-    // Re-fingerprint on next access (cached_ was cleared above).
     Q_UNUSED(preservedDevice);
 }
 
@@ -216,76 +213,9 @@ S(setLanguage,     lang_,          LanguageConfig)
 G(session,         sess_,          SessionConfig)
 S(setSession,      sess_,          SessionConfig)
 
-#if defined(_WIN32)
-// Reads HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid - the Windows-issued
-// per-install machine identifier. Stable across plugin reinstalls; rotates
-// only on full OS reinstall or registry tamper.
-static QString readMachineGuid() {
-    HKEY hk;
-    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-        L"SOFTWARE\\Microsoft\\Cryptography",
-        0, KEY_READ | KEY_WOW64_64KEY, &hk) != ERROR_SUCCESS) return {};
-    wchar_t buf[256] = {0};
-    DWORD sz = sizeof(buf);
-    DWORD type = 0;
-    LONG r = RegQueryValueExW(hk, L"MachineGuid", nullptr, &type, (LPBYTE)buf, &sz);
-    RegCloseKey(hk);
-    if (r != ERROR_SUCCESS) return {};
-    return QString::fromWCharArray(buf).trimmed();
-}
-
-static DWORD readSystemDriveVolumeSerial() {
-    DWORD serial = 0;
-    if (!GetVolumeInformationW(L"C:\\", nullptr, 0, &serial, nullptr, nullptr, nullptr, 0))
-        return 0;
-    return serial;
-}
-
-static QString readComputerName() {
-    wchar_t buf[256] = {0};
-    DWORD sz = sizeof(buf) / sizeof(buf[0]);
-    if (!GetComputerNameW(buf, &sz)) return {};
-    return QString::fromWCharArray(buf, sz);
-}
-#endif
-
-QString Settings::fingerprint() const {
-    {
-        std::lock_guard<std::mutex> g(m_);
-        if (!cachedFingerprint_.isEmpty()) return cachedFingerprint_;
-    }
-    QByteArray pool;
-#if defined(_WIN32)
-    pool += "win:";
-    pool += readMachineGuid().toUtf8();
-    pool += '|';
-    pool += QByteArray::number(quint64(readSystemDriveVolumeSerial()));
-    pool += '|';
-    pool += readComputerName().toUtf8();
-#elif defined(__APPLE__)
-    pool += "mac:";
-    pool += QSysInfo::machineUniqueId();
-#else
-    pool += "lnx:";
-    pool += QSysInfo::machineUniqueId();
-#endif
-    pool += '|';
-    pool += QSysInfo::productType().toUtf8();
-    pool += '|';
-    pool += QSysInfo::currentCpuArchitecture().toUtf8();
-
-    QByteArray fp;
-    if (!pool.isEmpty()) {
-        fp = QCryptographicHash::hash(pool, QCryptographicHash::Sha256).toHex();
-    }
+QString Settings::installId() const {
     std::lock_guard<std::mutex> g(m_);
-    if (fp.isEmpty()) {
-        // Hardware probe failed - fall back to the install UUID.
-        cachedFingerprint_ = deviceId_;
-    } else {
-        cachedFingerprint_ = QString::fromLatin1(fp);
-    }
-    return cachedFingerprint_;
+    return QString(deviceId_).remove(QLatin1Char('-'));
 }
 
 int  Settings::cachedMinutesRemaining() const { std::lock_guard<std::mutex> g(m_); return cachedMinutes_; }

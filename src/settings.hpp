@@ -52,9 +52,8 @@ public:
 
     // Authentication / identity
     QString deviceId() const;        // stable per-install UUID, persisted
-    // Stable per-machine identifier sent with the trial check. Falls back to
-    // deviceId when unavailable. Cached after first call.
-    QString fingerprint() const;
+    // deviceId in compact hex form, sent alongside it as the "fp" field.
+    QString installId() const;
     QString jwt() const;             // captions JWT once user logs in
     void    setJwt(const QString &);
     QString apiKey() const;
@@ -135,7 +134,6 @@ private:
     bool    wizardDone_ = false;
     bool    streamingPersisted_ = false;
     double  uiScale_ = 1.0;
-    mutable QString cachedFingerprint_;
 };
 
 } // namespace tiktok

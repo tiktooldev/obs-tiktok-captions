@@ -403,7 +403,7 @@ public:
         connect(signIn_, &QPushButton::clicked, this, []() {
             const QString returnUrl = QString::fromLatin1(TIKTOOL_WEB_BASE)
                 + "/captions/plugin-link?device=" + Settings::instance().deviceId()
-                + "&fp=" + Settings::instance().fingerprint();
+                + "&fp=" + Settings::instance().installId();
             const QString url = QString::fromLatin1(TIKTOOL_WEB_BASE)
                 + "/login?from=obs-plugin&returnTo=" + QUrl::toPercentEncoding(returnUrl);
             QDesktopServices::openUrl(QUrl(url));

@@ -34,8 +34,7 @@ public:
     void    setJwt(const QString &j) { jwtCached_ = j; }
     QString apiKeyCached() const { return apiKey_; }
     void    setApiKey(const QString &k) { apiKey_ = k; }
-    void    setFingerprint(const QString &fp) { fingerprint_ = fp; }
-    void    setClaimFingerprint(const QString &fp) { fingerprint_ = fp; }
+    void    setInstallId(const QString &id) { installId_ = id; }
 
 private:
     void postJson(const QString &path, const QJsonObject &body, JsonCb cb, bool authed);
@@ -46,7 +45,7 @@ private:
     QNetworkAccessManager *nam_;
     QString jwtCached_;
     QString apiKey_;
-    QString fingerprint_;
+    QString installId_;
 };
 
 } // namespace tiktok

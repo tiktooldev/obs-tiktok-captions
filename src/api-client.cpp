@@ -53,13 +53,13 @@ void ApiClient::getJson(const QString &p, JsonCb c, bool a) { send("GET", p, {},
 
 void ApiClient::checkTrial(const QString &deviceId, JsonCb cb) {
     QString q = "/captions/trial/check?deviceId=" + deviceId;
-    if (!fingerprint_.isEmpty()) q += "&fp=" + fingerprint_;
+    if (!installId_.isEmpty()) q += "&fp=" + installId_;
     getJson(q, cb, /*authed=*/false);
 }
 
 void ApiClient::claimDeviceWithToken(const QString &deviceId, const QString &linkToken, JsonCb cb) {
     QJsonObject body{{"deviceId", deviceId}, {"linkToken", linkToken}};
-    if (!fingerprint_.isEmpty()) body["fp"] = fingerprint_;
+    if (!installId_.isEmpty()) body["fp"] = installId_;
     postJson("/captions/trial/claim-device", body, cb, false);
 }
 

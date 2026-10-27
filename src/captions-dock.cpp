@@ -138,7 +138,7 @@ TikToolCaptionsDock::TikToolCaptionsDock()
     api_       = new ApiClient(this);
     api_->setJwt(Settings::instance().jwt());
     api_->setApiKey(Settings::instance().apiKey());
-    api_->setFingerprint(Settings::instance().fingerprint());
+    api_->setInstallId(Settings::instance().installId());
 
     audio_       = new AudioCapture(this);
     cohostAudio_ = new AudioCapture(this);
@@ -986,12 +986,11 @@ void TikToolCaptionsDock::onLoginClicked() {
     // `captions:plugin-link:<deviceId>` (TTL 5 min, single-read). We embed the
     // device id directly INSIDE the returnTo URL so login redirects preserve
     // it through Google OAuth + the post-login navigateTo step.
-    // Embed fingerprint in the returnTo so the plugin-link page can pass it
-    // to /api/captions/plugin-link, which writes it to TikTok cloud as part of
-    // the duplicate-account detection ledger.
+    // The install id rides along in the returnTo so the plugin-link page
+    // can forward it to /api/captions/plugin-link.
     const QString returnUrl = QString::fromLatin1(TIKTOOL_WEB_BASE)
         + "/captions/plugin-link?device=" + Settings::instance().deviceId()
-        + "&fp=" + Settings::instance().fingerprint();
+        + "&fp=" + Settings::instance().installId();
     const QString url = QString::fromLatin1(TIKTOOL_WEB_BASE)
         + "/login?from=obs-plugin&returnTo=" + QUrl::toPercentEncoding(returnUrl);
     QDesktopServices::openUrl(QUrl(url));
@@ -1182,8 +1181,7 @@ void TikToolCaptionsDock::onResetAllClicked() {
     if (QMessageBox::question(this, "Reset all settings",
         "Wipe every TikTok Captions - by TikTools setting on this machine?\n\n"
         "This clears your sign-in, your audio choice, your style sliders, your language pick, "
-        "and re-arms the first-run wizard. Your device identifier and hardware fingerprint stay "
-        "so the anti-abuse layer still recognises this machine.",
+        "and re-arms the first-run wizard. Your install identifier is kept.",
         QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) return;
     if (streaming_) {
         streaming_ = false;
@@ -1195,7 +1193,7 @@ void TikToolCaptionsDock::onResetAllClicked() {
     if (api_) {
         api_->setJwt("");
         api_->setApiKey("");
-        api_->setFingerprint(Settings::instance().fingerprint());
+        api_->setInstallId(Settings::instance().installId());
     }
     rebuildAudioSources();
     if (trial_) trial_->refresh();
